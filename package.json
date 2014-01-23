@@ -1,0 +1,19 @@
+{
+  "name": "sensor-labquest-2-interface",
+  "version": "0.1.0",
+  "description": "Javascript interface to LabQuest 2 sensors",
+  "main": "main.js",
+  "dependencies": {
+    "rsvp": "3.x",
+    "eventemitter2": ">= 0.4"
+  },
+  "devDependencies": {
+    "browserify": ">= 2.35 < 3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "mkdir -p dist && browserify main.js --standalone sensor-labquest-2-interface > dist/sensor-labquest-2-interface.js"
+  },
+  "author": "Richard Klancer <rpk@pobox.com>",
+  "licenses": ["MIT", "Simplified BSD", "Apache 2.0"]
+}

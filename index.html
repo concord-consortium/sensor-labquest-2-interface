@@ -1,0 +1,70 @@
+<html>
+<meta charset="utf-8">
+<head>
+<title>LabQuest 2 test page</title>
+<script src="dist/sensor-labquest-2-interface.js"></script>
+<script src="js/jquery-1.10.2.js"></script>
+<script>
+    $(document).ready(function() {
+        var sensor = sensorLabquest2Interface;
+
+        $('#connect').on('click', function() {
+            var ip = $('input[name=ip]').val();
+            sensor.startPolling(ip);
+            sensor.on('*', function() {
+                var args = Array.prototype.slice.call(arguments, 0);
+                $('#events').prepend('<p>' + this.event + '(' + args.join(',') + ')</p>');
+            });
+            sensor.on('data', dataHandler);
+        });
+
+        $('#disconnect').on('click', function() {
+            sensor.stopPolling();
+        });
+
+        $('#start').on('click', function() {
+            sensor.requestStart();
+        });
+
+        $('#stop').on('click', function() {
+            sensor.requestStop();
+        });
+
+        var lastColumnLengthById = {};
+
+        function dataHandler() {
+            sensor.datasets.forEach(function(dataset) {
+                dataset.columns.forEach(function(column, index) {
+                    var lastLength = lastColumnLengthById[column.id];
+                    if (lastLength === undefined) {
+                        lastLength = lastColumnLengthById[column.id] = 0;
+                    }
+
+                    if (column.data.length > lastLength) {
+                        $('#events').prepend(
+                            "<p>New data for " + column.type + " " + "(position " + (index+1) + "): " + column.data.slice(lastLength).join(',') + "</p>"
+                        );
+                        lastColumnLengthById[column.id] = column.data.length;
+                    }
+                });
+            });
+        }
+    });
+</script>
+</head>
+
+<body>
+<h1>LabQuest2 Demo</h1>
+
+<input name="ip" type="text"></input>
+<button id="connect">Connect</button>
+<button id="disconnect">Disconnect</button>
+
+<button id="start">Start</button>
+<button id="stop">Stop</button>
+
+<div id="events"></div>
+
+</body>
+
+</html>
