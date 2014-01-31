@@ -64,8 +64,12 @@ var timeoutTimer = {
     },
 
     reset: function() {
-        clearTimeout(this.timerId);
+        this.stop();
         this.start();
+    },
+
+    stop: function() {
+        clearTimeout(this.timerId);
     }
 };
 
@@ -216,6 +220,7 @@ module.exports = {
     },
 
     stopPolling: function() {
+        timeoutTimer.stop();
         clearInterval(statusIntervalId);
     },
 
