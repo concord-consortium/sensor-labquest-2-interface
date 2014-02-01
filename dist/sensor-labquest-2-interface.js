@@ -149,6 +149,7 @@ function processColumns(cols) {
             // Remember, the column information can change
             // HOWEVER, assume a column is never removed from one dataset and added to another
             column = columnsById[colId] = {
+                receivedValuesTimeStamp: 0,
                 requestedValuesTimeStamp: 0,
                 data: []
             };
@@ -157,22 +158,27 @@ function processColumns(cols) {
         }
 
         if (column.type && column.type !== columnFromResponse.units) {
-            events.emit('columnChanged', colId);
+            events.emit('columnTypeChanged', colId);
         }
         column.type = columnFromResponse.units;
         column.id = parseInt(colId, 10);
         if (column.requestedValuesTimeStamp < columnFromResponse.valuesTimeStamp) {
-            requestData(colId);
-            // TODO: indicate that we're waiting for data
+            requestData(colId, columnFromResponse.valuesTimeStamp);
             column.requestedValuesTimeStamp = columnFromResponse.valuesTimeStamp;
         }
     });
 
-    // TODO: check to see if any columns disappeared
+    // Find columns that were removed.
+    Object.keys(columnsById).forEach(function(colId) {
+        if ( ! cols[colId] ) {
+            events.emit('columnRemoved', colId);
+        }
+        delete columnsById[colId];
+    });
 }
 
 // Request data if status indicates there's more data
-function requestData(colId) {
+function requestData(colId, timeStamp) {
     console.log("requesting data for column: ", colId);
 
     var xhr = createCORSRequest('GET', '/columns/' + colId);
@@ -183,8 +189,10 @@ function requestData(colId) {
         var response = this.response || JSON.parse(this.responseText);
         var values = response.values;
         var column = columnsById[colId];
-        if (values.length > column.data.length) {
-            [].push.apply(column.data, values.slice(column.data.length));
+        if (timeStamp > column.receivedValuesTimeStamp) {
+            column.data.length = 0;
+            [].push.apply(column.data, values);
+            column.receivedValuesTimeStamp = timeStamp;
             events.emit('data', column.id);
         }
     };
@@ -236,6 +244,10 @@ module.exports = {
 
     isConnected: function() {
         return isConnected;
+    },
+
+    isCollecting: function() {
+        return isConnected && isCollecting;
     }
 };
 
