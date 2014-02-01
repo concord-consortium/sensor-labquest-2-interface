@@ -290,11 +290,11 @@ module.exports = {
         return datasets;
     },
 
-    isConnected: function() {
+    get isConnected() {
         return isPolling && isConnected;
     },
 
-    isCollecting: function() {
+    get isCollecting() {
         return isPolling && isConnected && isCollecting;
     }
 };
