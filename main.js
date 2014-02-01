@@ -167,7 +167,13 @@ function processColumns(cols) {
         }
     });
 
-    // TODO: check to see if any columns disappeared
+    // Find columns that were removed.
+    Object.keys(columnsById).forEach(function(colId) {
+        if ( ! cols[colId] ) {
+            events.emit('columnRemoved', colId);
+        }
+        delete columnsById[colId];
+    });
 }
 
 // Request data if status indicates there's more data
