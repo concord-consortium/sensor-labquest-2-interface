@@ -42,7 +42,7 @@
 
                     if (column.data.length > lastLength) {
                         $('#events').prepend(
-                            "<p>New data for " + column.type + " " + "(position " + (index+1) + "): " + column.data.slice(lastLength).join(',') + "</p>"
+                            "<p>New data for " + column.units + " " + "(position " + (index+1) + "): " + column.data.slice(lastLength).join(',') + "</p>"
                         );
                         lastColumnLengthById[column.id] = column.data.length;
                     }
