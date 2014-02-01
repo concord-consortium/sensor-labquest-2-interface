@@ -157,7 +157,7 @@ function processColumns(cols) {
         }
 
         if (column.type && column.type !== columnFromResponse.units) {
-            events.emit('columnChanged', colId);
+            events.emit('columnTypeChanged', colId);
         }
         column.type = columnFromResponse.units;
         column.id = parseInt(colId, 10);
