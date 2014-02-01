@@ -18,12 +18,23 @@ var events = new EventEmitter2({
     wildcard: true
 });
 
-var datasets = [];
-var datasetsById = Object.create(null);
-var columnsById = Object.create(null);
-
 var urlPrefix = '';
 var TIME_LIMIT_IN_MS = 5000;
+
+var isPolling = false;
+
+var datasets;
+var datasetsById;
+var columnsById;
+var sessionChangedEmitted;
+var currentSessionID;
+
+function initializeSession() {
+    datasets = [];
+    datasetsById = Object.create(null);
+    columnsById = Object.create(null);
+    sessionChangedEmitted = false;
+}
 
 // see http://www.html5rocks.com/en/tutorials/cors/
 function createCORSRequest(method, relativeUrl) {
@@ -96,10 +107,27 @@ function statusErrored() {
 function statusLoaded() {
     var response = this.response || JSON.parse(this.responseText);
 
+    if ( ! isPolling ) {
+        return;
+    }
+
     if (response.requestTimeStamp < lastStatusTimeStamp) {
         // stale out-of-order response; drop it like we never got it.
         return;
     }
+
+    if ( ! currentSessionID ) {
+        currentSessionID = response.sessionID;
+        initializeSession();
+    } else if (currentSessionID !== response.sessionID) {
+        // Session ID changed on us unexpectedly. Client should probably stop polling, start polling.
+        if ( ! sessionChangedEmitted) {
+            events.emit('sessionChanged');
+            sessionChangedEmitted = true;
+        }
+        return;
+    }
+
     lastStatusTimeStamp = response.requestTimeStamp;
 
     timeoutTimer.reset();
@@ -192,13 +220,14 @@ function processColumns(cols) {
 
 // Request data if status indicates there's more data
 function requestData(colId, timeStamp) {
-    console.log("requesting data for column: ", colId);
-
     var xhr = createCORSRequest('GET', '/columns/' + colId);
     // look, we wouldn't have got here if we didn't support CORS
     xhr.send();
 
     xhr.onload = function() {
+        if ( ! isPolling ) {
+            return;
+        }
         var response = this.response || JSON.parse(this.responseText);
         var values = response.values;
         var column = columnsById[colId];
@@ -236,6 +265,8 @@ module.exports = {
         urlPrefix = 'http://' + address;
 
         requestStatus();
+        isPolling = true;
+        isConnected = false;
         timeoutTimer.start();
         statusIntervalId = setInterval(requestStatus, 500);
     },
@@ -243,6 +274,8 @@ module.exports = {
     stopPolling: function() {
         timeoutTimer.stop();
         clearInterval(statusIntervalId);
+        currentSessionID = undefined;
+        isPolling = false;
     },
 
     requestStart: promisifyRequest('/control/start'),
@@ -253,14 +286,16 @@ module.exports = {
         events.on.apply(events, arguments);
     },
 
-    datasets: datasets,
+    get datasets() {
+        return datasets;
+    },
 
     isConnected: function() {
-        return isConnected;
+        return isPolling && isConnected;
     },
 
     isCollecting: function() {
-        return isConnected && isCollecting;
+        return isPolling && isConnected && isCollecting;
     }
 };
 
