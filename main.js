@@ -184,8 +184,8 @@ function processColumns(cols) {
     Object.keys(columnsById).forEach(function(colId) {
         if ( ! cols[colId] ) {
             events.emit('columnRemoved', colId);
+            delete columnsById[colId];
         }
-        delete columnsById[colId];
     });
 }
 
