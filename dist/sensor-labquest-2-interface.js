@@ -3,13 +3,13 @@
 
 'use strict';
 
-// properties
 // datasets[]
 //   columns[]
-//     type
 //     id
+//     units
 //     data[]
-//     timestamp
+//     requestedValuesTimeStamp
+//     receivedValuesTimeStamp
 
 var RSVP = require('rsvp');
 
@@ -130,7 +130,7 @@ function processDatasets(sets) {
             events.emit('datasetAdded', setId);
             datasetsById[setId] = {
                 columns: [],
-                id: parseInt(setId, 10)
+                id: setId
             };
             datasets.unshift(datasetsById[setId]);
         }
@@ -142,30 +142,43 @@ function processDatasets(sets) {
 function processColumns(cols) {
     // looks familiar
     Object.keys(cols).forEach(function(colId) {
+        var eventsToEmit = [];
         var columnFromResponse = cols[colId];
+        var dataset = datasetsById[columnFromResponse.setID];
         var column = columnsById[colId];
+
         if ( ! column ) {
-            events.emit('columnAdded', colId);
+            eventsToEmit.push('columnAdded');
             // Remember, the column information can change
             // HOWEVER, assume a column is never removed from one dataset and added to another
             column = columnsById[colId] = {
+                id: null,
+                units: null,
                 receivedValuesTimeStamp: 0,
                 requestedValuesTimeStamp: 0,
                 data: []
             };
-            // columns helpfully have a 'position' property
-            datasetsById[columnFromResponse.setID].columns[columnFromResponse.position] = column;
+        } else if (column !== dataset.columns[columnFromResponse.position]) {
+            eventsToEmit.push('columnMoved');
         }
 
-        if (column.type && column.type !== columnFromResponse.units) {
-            events.emit('columnTypeChanged', colId);
+        dataset.columns[columnFromResponse.position] = column;
+
+        if (column.units && column.units !== columnFromResponse.units) {
+            eventsToEmit.push('columnTypeChanged');
         }
-        column.type = columnFromResponse.units;
-        column.id = parseInt(colId, 10);
+
+        column.units = columnFromResponse.units;
+        column.id = colId;
+
         if (column.requestedValuesTimeStamp < columnFromResponse.valuesTimeStamp) {
             requestData(colId, columnFromResponse.valuesTimeStamp);
             column.requestedValuesTimeStamp = columnFromResponse.valuesTimeStamp;
         }
+
+        eventsToEmit.forEach(function(eventName) {
+            events.emit(eventName, colId);
+        });
     });
 
     // Find columns that were removed.
@@ -193,7 +206,7 @@ function requestData(colId, timeStamp) {
             column.data.length = 0;
             [].push.apply(column.data, values);
             column.receivedValuesTimeStamp = timeStamp;
-            events.emit('data', column.id);
+            events.emit('data', colId);
         }
     };
 }
