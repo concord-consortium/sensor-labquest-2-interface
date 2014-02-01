@@ -243,5 +243,9 @@ module.exports = {
 
     isConnected: function() {
         return isConnected;
+    },
+
+    isCollecting: function() {
+        return isConnected && isCollecting;
     }
 };
