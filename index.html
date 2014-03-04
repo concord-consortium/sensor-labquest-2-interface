@@ -9,6 +9,7 @@
         var sensor = sensorLabquest2Interface;
 
         $('#connect').on('click', function() {
+            $('#control-status').html('Remote control is enabled. To collect data, press start/stop on this page.');
             var ip = $('input[name=ip]').val();
             sensor.startPolling(ip);
             sensor.on('*', function() {
@@ -20,6 +21,7 @@
 
         $('#disconnect').on('click', function() {
             sensor.stopPolling();
+            $('#control-status').html('Enter an address for your LabQuest2 and click Connect.');
         });
 
         $('#start').on('click', function() {
@@ -28,6 +30,18 @@
 
         $('#stop').on('click', function() {
             sensor.requestStop();
+        });
+
+        sensor.on('controlDisabled', function() {
+           $('#start').prop("disabled",true);
+           $('#stop').prop("disabled",true);
+           $('#control-status').html("Remote control is disabled. To collect data, press start/stop on your LabQuest2.");
+        });
+
+        sensor.on('controlEnabled', function() {
+           $('#start').prop("disabled",false);
+           $('#stop').prop("disabled",false);
+           $('#control-status').html("Remote control is enabled. To collect data, press start/stop on this page.");
         });
 
         var lastColumnLengthById = {};
@@ -62,6 +76,7 @@
 
 <button id="start">Start</button>
 <button id="stop">Stop</button>
+<span id="control-status">Enter an address for your LabQuest2 and click Connect.</span>
 
 <div id="events"></div>
 

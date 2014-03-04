@@ -63,6 +63,7 @@ function createCORSRequest(method, relativeUrl) {
 var lastStatusTimeStamp = 0;
 var isConnected = false;
 var isCollecting = false;
+var canControl = true;
 
 // called by timeoutTimer
 function connectionTimedOut() {
@@ -147,6 +148,14 @@ function statusLoaded() {
     } else if (! isCollecting && response.collection.isCollecting) {
         isCollecting = true;
         events.emit('collectionStarted');
+    }
+
+    if (canControl && ! response.collection.canControl) {
+        canControl = false;
+        events.emit('controlDisabled');
+    } else if (! canControl && response.collection.canControl) {
+        canControl = true;
+        events.emit('controlEnabled');
     }
 }
 
@@ -299,6 +308,10 @@ module.exports = {
 
     get isCollecting() {
         return isPolling && isConnected && isCollecting;
+    },
+
+    get canControl() {
+        return canControl;
     }
 };
 
