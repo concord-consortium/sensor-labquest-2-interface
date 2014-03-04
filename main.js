@@ -297,6 +297,10 @@ module.exports = {
         events.on.apply(events, arguments);
     },
 
+    off: function() {
+        events.off.apply(events, arguments);
+    },
+
     get datasets() {
         return datasets;
     },
