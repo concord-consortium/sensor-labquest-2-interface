@@ -108,6 +108,7 @@ function statusErrored() {
 
 function statusLoaded() {
     var response = this.response || JSON.parse(this.responseText);
+    if (typeof(response) === "string") { response = JSON.parse(response); }
 
     if ( ! isPolling ) {
         return;
@@ -241,6 +242,7 @@ function requestData(colId, timeStamp) {
             return;
         }
         var response = this.response || JSON.parse(this.responseText);
+        if (typeof(response) === "string") { response = JSON.parse(response); }
         var values = response.values;
         var column = columnsById[colId];
         if (timeStamp > column.receivedValuesTimeStamp) {
