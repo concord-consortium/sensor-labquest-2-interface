@@ -172,6 +172,8 @@ function processDatasets(sets) {
             };
             datasets.unshift(datasetsById[setId]);
         }
+        // Set the columns array length so that it's the correct size if a column was removed
+        datasetsById[setId].columns.length = sets[setId].colIDs.length
     });
     // make sure the highest-numbered dataset is always datasets[0]
     datasets.sort(function(d1, d2) { return d2.setId-d1.setId; });
