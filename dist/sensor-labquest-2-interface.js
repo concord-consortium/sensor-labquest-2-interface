@@ -182,14 +182,14 @@ function processDatasets(sets) {
 
 function processColumns(cols) {
     // looks familiar
+    var eventsToEmit = [];
     Object.keys(cols).forEach(function(colId) {
-        var eventsToEmit = [];
         var columnFromResponse = cols[colId];
         var dataset = datasetsById[columnFromResponse.setID];
         var column = columnsById[colId];
 
         if ( ! column ) {
-            eventsToEmit.push('columnAdded');
+            eventsToEmit.push(['columnAdded',colId]);
             // Remember, the column information can change
             // HOWEVER, assume a column is never removed from one dataset and added to another
             column = columnsById[colId] = {
@@ -201,13 +201,13 @@ function processColumns(cols) {
                 data: []
             };
         } else if (column !== dataset.columns[columnFromResponse.position]) {
-            eventsToEmit.push('columnMoved');
+            eventsToEmit.push(['columnMoved',colId]);
         }
 
         dataset.columns[columnFromResponse.position] = column;
 
-        if (column.units && column.units !== columnFromResponse.units) {
-            eventsToEmit.push('columnTypeChanged');
+        if (column.units !== null && column.units !== columnFromResponse.units) {
+            eventsToEmit.push(['columnTypeChanged',colId]);
         }
 
         column.units = columnFromResponse.units;
@@ -218,18 +218,18 @@ function processColumns(cols) {
             requestData(colId, columnFromResponse.valuesTimeStamp);
             column.requestedValuesTimeStamp = columnFromResponse.valuesTimeStamp;
         }
-
-        eventsToEmit.forEach(function(eventName) {
-            events.emit(eventName, colId);
-        });
     });
 
     // Find columns that were removed.
     Object.keys(columnsById).forEach(function(colId) {
         if ( ! cols[colId] ) {
-            events.emit('columnRemoved', colId);
+            eventsToEmit.push(['columnRemoved', colId]);
             delete columnsById[colId];
         }
+    });
+
+    eventsToEmit.forEach(function(arr) {
+        events.emit(arr[0], arr[1]);
     });
 }
 
