@@ -3,6 +3,11 @@
 
 'use strict';
 
+// liveSensors[]
+//     id
+//     liveValue
+//     units
+
 // datasets[]
 //   columns[]
 //     id
@@ -24,6 +29,7 @@ var TIME_LIMIT_IN_MS = 10000;
 
 var isPolling = false;
 
+var liveSensors;
 var datasets;
 var datasetsById;
 var columnsById;
@@ -32,6 +38,7 @@ var currentSessionID;
 
 function initializeSession() {
     datasets = [];
+    liveSensors = [];
     datasetsById = Object.create(null);
     columnsById = Object.create(null);
     sessionChangedEmitted = false;
@@ -137,8 +144,12 @@ function statusLoaded() {
     processDatasets(response.sets);
     processColumns(response.columns);
 
-    // TODO liveValue
+    // update live values for simple meter readings
+    processLiveValues(response.views, response.columns);
 
+    if (!isConnected) {
+      events.emit('connected');
+    }
     isConnected = true;
 
     events.emit('statusReceived');
@@ -159,7 +170,18 @@ function statusLoaded() {
         events.emit('controlEnabled');
     }
 }
-
+function processLiveValues(views, columns) {
+  Object.keys(views).forEach(function (viewId) {
+    var liveColumns = views[viewId].leftTraceColIDs;
+    if (liveColumns) {
+      // this is the list of column IDs for the currently connected probes
+      liveSensors = [];
+      liveColumns.forEach(function (colId) {
+        liveSensors.push({ id: colId, liveValue: columns[colId].liveValue, units: columns[colId].units });
+      });
+    }
+  });
+}
 // Handle 'datasets' and 'columns' in the response
 function processDatasets(sets) {
     Object.keys(sets).forEach(function(setId) {
@@ -310,6 +332,10 @@ module.exports = {
 
     get datasets() {
         return datasets;
+    },
+
+    get liveSensors() {
+        return liveSensors;
     },
 
     get isConnected() {
