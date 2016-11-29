@@ -115,7 +115,13 @@ function statusLoaded() {
     var response = this.response || JSON.parse(this.responseText);
     if (typeof(response) === "string") { response = JSON.parse(response); }
 
-    if (!isPolling && isConnected) {
+    if (isPolling && !isConnected) {
+      // connect requested, response receive, we must be connected.
+      events.emit('connected');
+      // Start polling now that we know we are connected
+      statusIntervalId = setInterval(requestStatus, 500);
+      isConnected = true;
+    } else if (!isPolling) {
       isConnected = false;
       return;
     }
@@ -144,13 +150,6 @@ function statusLoaded() {
     processColumns(response.columns);
     // update live values for simple meter readings
     processLiveValues(response.views, response.columns);
-
-    if (!isConnected) {
-      events.emit('connected');
-      isPolling = true;
-      statusIntervalId = setInterval(requestStatus, 500);
-    }
-    isConnected = true;
 
     events.emit('statusReceived');
 
@@ -304,13 +303,9 @@ module.exports = {
     connect: function (address) {
       urlPrefix = 'http://' + address;
       isConnected = false;
+      isPolling = true;
       timeoutTimer.start();
       requestStatus();
-    },
-
-    startPolling: function() {
-        isPolling = true;
-        statusIntervalId = setInterval(requestStatus, 500);
     },
 
     stopPolling: function() {
