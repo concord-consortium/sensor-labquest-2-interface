@@ -115,8 +115,9 @@ function statusLoaded() {
     var response = this.response || JSON.parse(this.responseText);
     if (typeof(response) === "string") { response = JSON.parse(response); }
 
-    if ( ! isPolling ) {
-        return;
+    if (!isPolling && isConnected) {
+      isConnected = false;
+      return;
     }
 
     if (response.requestTimeStamp < lastStatusTimeStamp) {
@@ -146,6 +147,8 @@ function statusLoaded() {
 
     if (!isConnected) {
       events.emit('connected');
+      isPolling = true;
+      statusIntervalId = setInterval(requestStatus, 500);
     }
     isConnected = true;
 
@@ -298,14 +301,15 @@ function promisifyRequest(url) {
 }
 
 module.exports = {
+    connect: function (address) {
+      urlPrefix = 'http://' + address;
+      isConnected = false;
+      timeoutTimer.start();
+      requestStatus();
+    },
 
-    startPolling: function(address) {
-        urlPrefix = 'http://' + address;
-
-        requestStatus();
+    startPolling: function() {
         isPolling = true;
-        isConnected = false;
-        timeoutTimer.start();
         statusIntervalId = setInterval(requestStatus, 500);
     },
 

@@ -11,7 +11,7 @@
         $('#connect').on('click', function() {
             $('#control-status').html('Connecting...');
             var ip = $('input[name=ip]').val();
-            sensor.startPolling(ip);
+            sensor.connect(ip);
             sensor.on('connected', function(){
                $('#control-status').html('Connected.');
             });

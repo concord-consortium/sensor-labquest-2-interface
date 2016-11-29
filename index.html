@@ -11,7 +11,7 @@
         $('#connect').on('click', function() {
             $('#control-status').html('Remote control is enabled. To collect data, press start/stop on this page.');
             var ip = $('input[name=ip]').val();
-            sensor.startPolling(ip);
+            sensor.connect(ip);
             sensor.on('*', function() {
                 var args = Array.prototype.slice.call(arguments, 0);
                 $('#events').prepend('<p>' + this.event + '(' + args.join(',') + ')</p>');
